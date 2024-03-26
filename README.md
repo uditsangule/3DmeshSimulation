@@ -25,9 +25,9 @@ pandas~=2.0.3
 - color : ```blue points``` are the intersecting faces w.r.t to camera.
 - color : ```blue lines``` are the camera fov. 
 - color : ```black lines``` are rays which I have reduced the density for better view.
-- SS1: ![](/home/udit/Udit/Repos/ARwayTest/SS1.png "Result1")
-- SS2: ![](/home/udit/Udit/Repos/ARwayTest/SS2.png "Result2")
-- SS3: ![](/home/udit/Udit/Repos/ARwayTest/SS3.png "Result3")
+- SS1: ![](SS1.png "Result1")
+- SS2: ![](SS2.png "Result2")
+- SS3: ![](SS3.png "Result3")
 
 
 # Note
