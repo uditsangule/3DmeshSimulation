@@ -31,6 +31,5 @@ pandas~=2.0.3
 
 
 # Note
-- Feel free to contact in Any Manner for doubts , or if code is not working. Sometimes Linux to windows crossplatfrom may cause path issues, which already care has been taken.
-
+- Feel free to contact ![uditsangule@gmail.com](uditsangule@gmail.com) in Any Manner for doubts , or if code is not working. Sometimes Linux to windows crossplatfrom may cause path issues, which already care has been taken.
 
