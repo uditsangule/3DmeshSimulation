@@ -1,0 +1,6 @@
+numpy~=1.24.4
+pyquaternion~=0.9.9
+PyYAML~=6.0.1
+opencv-python~=4.8.1.78
+open3d~=0.18.0
+pandas~=2.0.3

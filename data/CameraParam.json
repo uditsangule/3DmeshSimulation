@@ -1,8 +1,8 @@
 {
   "Camera": {
     "imageshape": [
-      640,
-      480
+      960,
+      720
     ],
     "intrinsic": [
       [

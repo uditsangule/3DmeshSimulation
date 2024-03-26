@@ -6,6 +6,7 @@ import json
 
 def read_json(path):
     with open(path , 'r') as f : return json.load(f)
+
 def Fstatus(fpath):
     """
     checks the folder path , if doesn't exist, it creates that path
@@ -29,6 +30,6 @@ def read_calibration(calib_path,camid=1):
 
 def save_calibration(outputdir , data , camid=1):
     outputdir = Fstatus(outputdir)
-    with open(outputdir + os.sep + f'Calibration_Camera{camid}.yaml', 'w') as f:
+    with open(outputdir + os.sep + f'{camid}.yaml', 'w') as f:
         yaml.dump(data, f, sort_keys=False)
     return
