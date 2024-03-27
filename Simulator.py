@@ -12,6 +12,13 @@ from utility import open3d_util as o3d
 
 
 def get_random(min_bb, max_bb, size=30):
+    """
+    Generates random trajectory within bounding box
+    :param min_bb:
+    :param max_bb:
+    :param size:
+    :return:
+    """
     x, y, z = np.arange(min_bb[0], max_bb[0]), np.arange(min_bb[1], max_bb[1]), np.arange(min_bb[2], max_bb[2])
     campos = np.vstack((np.sort(np.random.choice(x, size=size, replace=True)),
                         np.random.choice(y, size=size, replace=True),
@@ -21,6 +28,14 @@ def get_random(min_bb, max_bb, size=30):
 
 
 def UV2rgb(texture_image, triangle_uvs, vertices, triangles):
+    """
+    Converts uv map to rgb color by extracting colors from image
+    :param texture_image: texture image
+    :param triangle_uvs: uv mapping of texture to triangles , 3N,2
+    :param vertices: vertices of mesh
+    :param triangles: triangles of mesh
+    :return: vertex colors , triangles colors
+    """
     texture_height, texture_width, _ = texture_image.shape
 
     # Converting uv w.r.t to image idx
@@ -73,6 +88,9 @@ class UnProjector:
     def _export(self, pose_dict, outdir=None):
         print("Saving Files on ...")
         outdir = fp.Fstatus(self.outputdir if outdir is None else outdir)
+        if len(pose_dict) < 1:
+            print("NO files to save!")
+            return
 
         # saving depth ,rgb images , pcd
         for d in pose_dict:
@@ -136,10 +154,11 @@ class UnProjector:
         pose_dict = []
         tic = time.time_ns()
         campose = [[0, 0, 0]]
-        tmat = np.eye(4)
+
         for i in range(1, N):
             print(i)
-            tmat[:3,:3] = _RTS.get_rotmat(vec1=[0,0,1] , vec2= [0,0,i*5 if i < 3 else 2])
+            #tmat[:3,:3] = _RTS.get_rotmat(vec1=[0,0,1] , vec2= [0,0,i*5 if i < 3 else 2])
+            tmat = np.eye(4)
             tmat[:3,3] = [0,-1,1]
             self.cam.update_locations(Tmat=tmat)
 
