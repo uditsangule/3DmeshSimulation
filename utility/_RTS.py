@@ -12,12 +12,16 @@ def quats_to_Tmatrix(q_):
 def Tmatrix_to_quats(Tmatrix):
     return pyqr.Quaternion(matrix=Tmatrix)
 
-def get_random_Tmatrix(extends=None):
+def get_random_Tmatrix(bbox=None):
     tmat = quats_to_Tmatrix(pyqr.Quaternion.random())
-    if extends is None:
-        tmat[:3 ,3] = np.random.uniform(low=0 , high=10 , size=(3,))
+    np.random.seed(42)
+    if bbox is None:
+        tmat[:3 ,3] = np.random.uniform(low=-3 , high=3 , size=(3,))
     else:
-        tmat[:3,3] = np.random.uniform(low=extends[0] , high=extends[1] , size=(3,))
+        max_b = bbox.get_max_bound()
+        min_b = bbox.get_min_bound()
+        t = [np.random.uniform(min_b[0],max_b[0]),np.random.uniform(min_b[1],max_b[1]) , np.random.uniform(min_b[2],max_b[2])]
+        tmat[:3,3] = t
     return tmat
 
 def get_rotmat(vec1, vec2):

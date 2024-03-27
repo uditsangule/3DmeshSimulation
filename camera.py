@@ -29,12 +29,19 @@ class Camera:
         self.up = up
         # Todo: if calib not found then ways to predict,load default parameters!
         if calibfile is not None:
-            calib = read_json(calibfile)
-            self.imgdimm = calib['Camera']['imageshape']
-            self.params = o3d.camera.PinholeCameraParameters()
-            self.params.intrinsic = o3d.camera.PinholeCameraIntrinsic(width=self.imgdimm[0], height=self.imgdimm[1],
-                                                                      intrinsic_matrix=calib['Camera']['intrinsic'])
-            self.params.extrinsic = calib['Camera']['extrinsic']
+            self.calib = read_json(calibfile)
+            self.imgdimm = self.calib['Camera']['imageshape']
+
+            self.inrinsic = self.calib['Camera']['intrinsic']
+            self.extrinsic = self.calib['Camera']['extrinsic']
+            self.intrinsic = o3d.camera.PinholeCameraIntrinsic(width=self.imgdimm[0], height=self.imgdimm[1],
+                                                                      intrinsic_matrix=self.calib['Camera']['intrinsic'])
+            params = o3d.camera.PinholeCameraParameters()
+            params.extrinsic = self.extrinsic
+            params.intrinsic = self.intrinsic
+            self.params = params
+            self.tmat = np.dot(self.params.extrinsic , np.eye(4))
+            self.correctionM = self.params.extrinsic
             self.projectionMat = self.params.intrinsic.intrinsic_matrix.dot(
                 np.hstack([self.params.extrinsic[:3, :3], np.asarray(self.position)[:, None]]))
         return
@@ -55,8 +62,12 @@ class Camera:
             Tmat = np.eye(4)
             Tmat[:3, 3] = self.position
             Tmat[:3, :3] = _RTS.get_rotmat(vec1=_RTS.zaxis, vec2=self.lookat)
-
-        self.params.extrinsic = Tmat
+        else:
+            self.position = Tmat[:3,3]
+        params = o3d.camera.PinholeCameraParameters()
+        params.extrinsic = Tmat
+        params.intrinsic = self.intrinsic
+        self.params = params
         self.projectionMat = self.params.intrinsic.intrinsic_matrix.dot(
             np.hstack([self.params.extrinsic[:3, :3], np.asarray(self.position)[:, None]]))
         return
@@ -67,7 +78,7 @@ class Camera:
         :return: (source points [N,3] , ray direction vectors( Normalized ) [N,3])
         """
         invk = np.linalg.inv(self.params.intrinsic.intrinsic_matrix)
-        Rot, t = self.params.extrinsic[:3, :3], self.params.extrinsic[:3, 3]
+        Rot, t = self.tmat[:3, :3], self.tmat[:3, 3]
         Source = np.dot(Rot, t)
         x, y = np.meshgrid(np.arange(self.imgdimm[0]), np.arange(self.imgdimm[1]))
         px = np.stack((x + 0.5, y + 0.5, np.ones_like(x)), axis=-1)
@@ -105,12 +116,15 @@ class Camera:
         camviz = o3d.geometry.LineSet.create_camera_visualization(view_width_px=self.imgdimm[0],
                                                                   view_height_px=self.imgdimm[1],
                                                                   intrinsic=self.params.intrinsic.intrinsic_matrix,
-                                                                  extrinsic=self.params.extrinsic, )
-        if ret_:
-            return [camviz]
+                                                                  extrinsic=self.params.extrinsic)
+        sphere = o3d.geometry.TriangleMesh.create_sphere(radius=0.1)
+        sphere.transform(self.params.extrinsic)
         src, dirs = self.get_rays()
         lset = self.draw_rays(sources=np.vstack(src), direction=np.vstack(dirs), colors=[1, 0, 0])
-        o3d.visualization.draw_geometries([camviz] + [lset])
+        if ret_:
+            return [camviz]
+
+        o3d.visualization.draw_geometries([camviz] + [lset] + [sphere])
         return
 
 

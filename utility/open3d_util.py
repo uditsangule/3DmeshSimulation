@@ -74,6 +74,16 @@ def _topcd(points=None, colors=np.asarray([0, 0, 1]), normals=None, filepath=Non
     return pcd
 
 
+def images_topcd(depth_im, rgb_im, intr, extr):
+    rgb_im = o3d.geometry.Image((rgb_im * 255.).astype(np.uint8))
+    depth_im = o3d.geometry.Image(depth_im)
+    rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(color=rgb_im, depth=depth_im, depth_trunc=10000,
+                                                              depth_scale=1000, convert_rgb_to_intensity=False)
+    pointcloud = o3d.geometry.PointCloud.create_from_rgbd_image(image=rgbd, intrinsic=intr, extrinsic=extr)
+    pointcloud.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=0.1, max_nn=30))
+    return pointcloud, rgbd
+
+
 def _tomesh(vertices=None, triangles=None, normals=False, colors=np.asarray([0, 1, 0]), anticlock=0, filepath=None,
             *args, **kwargs):
     """creates mesh from vertices and triangles"""
@@ -97,11 +107,12 @@ def _tomesh(vertices=None, triangles=None, normals=False, colors=np.asarray([0, 
 
 # CV2 or 2D images area!
 
-def show(image, windowname='depth', waitkey=1000):
+def show(image, windowname='depth', waitkey=1000, dest=True):
     cv2.namedWindow(windowname, cv2.WINDOW_NORMAL)
     cv2.imshow(windowname, image)
     cv2.waitKey(waitkey)
-    cv2.destroyWindow(windowname)
+    if waitkey != 0 or dest:
+        cv2.destroyWindow(windowname)
     return
 
 
