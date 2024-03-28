@@ -141,7 +141,7 @@ class UnProjector:
         o3d.NormalViz([self.mesh] + [self.bbox] + [o3d.axis_mesh(size=3, origin=[0, 0, 0])] + self.cam.show(ret_=True))
         return
 
-    def run(self, save=False, show=False, N=5, waitkey=1000):
+    def run(self, save=False, show=False, N=10, waitkey=1000):
         """
         Ray Casting to mesh to get the depth images , poses , etc.
         :param save: enables saving the results
@@ -154,12 +154,15 @@ class UnProjector:
         pose_dict = []
         tic = time.time_ns()
         campose = [[0, 0, 0]]
-
+        tmat = np.eye(4)
         for i in range(1, N):
             print(i)
             #tmat[:3,:3] = _RTS.get_rotmat(vec1=[0,0,1] , vec2= [0,0,i*5 if i < 3 else 2])
-            tmat = np.eye(4)
-            tmat[:3,3] = [0,-1,1]
+            #tmat = np.eye(4)
+
+            tmat[0,:3] = [1,0,0]
+            tmat[1,:3] = [0,-1,0]
+            tmat[:3,3] = [1,1,i*0.5]
             self.cam.update_locations(Tmat=tmat)
 
             # rays1 = o3c.Tensor(np.concatenate(self.cam.get_rays(), axis=-1).astype(np.float32))
@@ -192,12 +195,14 @@ class UnProjector:
                               'imagedimm': self.cam.imgdimm, 'depth_im': depth_im, 'rgb': rgb_im})
             if show:
                 points3d = o3d._topcd(points=np.vstack(vertices[uq_tri]), colors=np.vstack(self.vcol[uq_tri]))
+                pcd , _ = o3d.images_topcd(depth_im=depth_im , rgb_im=rgb_im ,intr=self.cam.intrinsic ,extr=self.cam.params.extrinsic)
                 o3d.show(image=depth_im, waitkey=0, dest=False, windowname='imdepth')
                 o3d.show(image=rgb_im, waitkey=0, dest=False, windowname='rgb')
                 # o3d.show(image=ans['primitive_normals'].numpy(), dest=False, waitkey=0, windowname='normalsmap')
-                o3d.NormalViz([points3d] + [o3d._drawPoses(self.campose)] + [self.mesh] + self.cam.show(True) + [
+                o3d.NormalViz([points3d] + [self.mesh] + self.cam.show(True) + [
                     self.cam.draw_rays(direction=np.vstack(rays.numpy()[:, :, 3:]),
-                                       sources=np.vstack(rays.numpy()[:, :, :3]))])
+                                       sources=np.vstack(rays.numpy()[:, :, :3]))] + [o3d.axis_mesh(size=1)])
+                o3d.NormalViz([pcd] + [o3d.axis_mesh(size=1)])
                 o3d.cv2.destroyAllWindows()
 
         if save:
@@ -208,6 +213,6 @@ class UnProjector:
 if __name__ == '__main__':
     inputdir = os.getcwd() + f'{os.sep}data'
     outdir = os.getcwd() + f'{os.sep}data{os.sep}Arway'
-    App = UnProjector(inputdir, outdir, filename='OfficeArway.glb')
+    App = UnProjector(inputdir, outdir, filename='OfficeArway.glb' , pose_format='raw')
     # App.show()
-    App.run(save=True, show=True)
+    App.run(save=True, show=False)

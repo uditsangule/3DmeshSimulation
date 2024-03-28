@@ -79,7 +79,7 @@ def images_topcd(depth_im, rgb_im, intr, extr):
     depth_im = o3d.geometry.Image(depth_im)
     rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(color=rgb_im, depth=depth_im, depth_trunc=10000,
                                                               depth_scale=1000, convert_rgb_to_intensity=False)
-    pointcloud = o3d.geometry.PointCloud.create_from_rgbd_image(image=rgbd, intrinsic=intr, extrinsic=extr)
+    pointcloud = o3d.geometry.PointCloud.create_from_rgbd_image(image=rgbd, intrinsic=intr)
     pointcloud.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=0.1, max_nn=30))
     return pointcloud, rgbd
 

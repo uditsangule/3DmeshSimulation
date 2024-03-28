@@ -32,16 +32,17 @@ class Camera:
             self.calib = read_json(calibfile)
             self.imgdimm = self.calib['Camera']['imageshape']
 
-            self.inrinsic = self.calib['Camera']['intrinsic']
             self.extrinsic = self.calib['Camera']['extrinsic']
             self.intrinsic = o3d.camera.PinholeCameraIntrinsic(width=self.imgdimm[0], height=self.imgdimm[1],
                                                                       intrinsic_matrix=self.calib['Camera']['intrinsic'])
+
             params = o3d.camera.PinholeCameraParameters()
             params.extrinsic = self.extrinsic
             params.intrinsic = self.intrinsic
             self.params = params
-            self.tmat = np.dot(self.params.extrinsic , np.eye(4))
-            self.correctionM = self.params.extrinsic
+
+            self.correctionM = np.eye(4)
+            self.correctionM[:2,:2] *=-1
             self.projectionMat = self.params.intrinsic.intrinsic_matrix.dot(
                 np.hstack([self.params.extrinsic[:3, :3], np.asarray(self.position)[:, None]]))
         return
@@ -65,7 +66,7 @@ class Camera:
         else:
             self.position = Tmat[:3,3]
         params = o3d.camera.PinholeCameraParameters()
-        params.extrinsic = Tmat
+        params.extrinsic = Tmat#np.dot(self.correctionM , Tmat)
         params.intrinsic = self.intrinsic
         self.params = params
         self.projectionMat = self.params.intrinsic.intrinsic_matrix.dot(
@@ -78,7 +79,7 @@ class Camera:
         :return: (source points [N,3] , ray direction vectors( Normalized ) [N,3])
         """
         invk = np.linalg.inv(self.params.intrinsic.intrinsic_matrix)
-        Rot, t = self.tmat[:3, :3], self.tmat[:3, 3]
+        Rot, t = self.params.extrinsic[:3, :3], self.params.extrinsic[:3, 3]
         Source = np.dot(Rot, t)
         x, y = np.meshgrid(np.arange(self.imgdimm[0]), np.arange(self.imgdimm[1]))
         px = np.stack((x + 0.5, y + 0.5, np.ones_like(x)), axis=-1)
