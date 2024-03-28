@@ -100,7 +100,7 @@ class UnProjector:
                                          extr=self.cam.params.extrinsic)
 
             o3d.o3d.io.write_point_cloud(filename=fp.Fstatus(outdir + os.sep + '__pcd') + os.sep + f'{d["id"]}.ply',
-                                         write_ascii=True, print_progress=True , pointcloud=pcd)
+                                         write_ascii=True, print_progress=True, pointcloud=pcd)
 
         # save calib.yaml
         calibfile = []
@@ -110,10 +110,11 @@ class UnProjector:
             fp.save_calibration(outputdir=fp.Fstatus(outdir + os.sep + '_calib'), data=data, camid=d['id'])
 
         # save poses.csv
-        D1 = pd.DataFrame.from_dict(pose_dict).drop(columns=['poseext', 'transformation','depth_im','rgb', 'imagedimm', 'intr'])
+        D1 = pd.DataFrame.from_dict(pose_dict).drop(
+            columns=['poseext', 'transformation', 'depth_im', 'rgb', 'imagedimm', 'intr'])
         if self.pose_format == 'raw':
             cols = ['Rx1', 'Rx2', 'Rx3', 'Tx', 'Ry1', 'Ry2', 'Ry3', 'Ty', 'Rz1', 'Rz2', 'Rz3', 'Tz']
-            P = [d['transformation'].flatten()[:-4].tolist() for d in pose_dict]
+            P = [d['transformation'][:3,:].flatten().tolist() for d in pose_dict]
         elif self.pose_format == 'slam':
             P = []
             cols = ['qw', 'qx', 'qy', 'qz', 'x', 'y', 'z']
@@ -141,7 +142,7 @@ class UnProjector:
         o3d.NormalViz([self.mesh] + [self.bbox] + [o3d.axis_mesh(size=3, origin=[0, 0, 0])] + self.cam.show(ret_=True))
         return
 
-    def run(self, save=False, show=False, N=10, waitkey=1000):
+    def run(self, save=False, show=False, N=4, waitkey=1000):
         """
         Ray Casting to mesh to get the depth images , poses , etc.
         :param save: enables saving the results
@@ -154,15 +155,15 @@ class UnProjector:
         pose_dict = []
         tic = time.time_ns()
         campose = [[0, 0, 0]]
-        tmat = np.eye(4)
+
         for i in range(1, N):
             print(i)
-            #tmat[:3,:3] = _RTS.get_rotmat(vec1=[0,0,1] , vec2= [0,0,i*5 if i < 3 else 2])
-            #tmat = np.eye(4)
+            # tmat[:3,:3] = _RTS.get_rotmat(vec1=[0,0,1] , vec2= [0,0,i*5 if i < 3 else 2])
+            tmat = np.eye(4)
+            tmat[0, :3] = [1, 0, 0]
+            tmat[1, :3] = [0, -1, 0]
+            tmat[:3, 3] = [1, 1, i]
 
-            tmat[0,:3] = [1,0,0]
-            tmat[1,:3] = [0,-1,0]
-            tmat[:3,3] = [1,1,i*0.5]
             self.cam.update_locations(Tmat=tmat)
 
             # rays1 = o3c.Tensor(np.concatenate(self.cam.get_rays(), axis=-1).astype(np.float32))
@@ -190,12 +191,13 @@ class UnProjector:
 
             depth_im = o3d.process_depth(ans['t_hit'].numpy())
 
-            pose_dict.append({'id': i, 'transformation': tmat, 'poseext': self.cam.params.extrinsic,
+            pose_dict.append({'id': i, 'transformation': tmat.copy(), 'poseext': self.cam.params.extrinsic,
                               'intr': self.cam.params.intrinsic.intrinsic_matrix, 'timestamp': time.time_ns() - tic,
                               'imagedimm': self.cam.imgdimm, 'depth_im': depth_im, 'rgb': rgb_im})
             if show:
                 points3d = o3d._topcd(points=np.vstack(vertices[uq_tri]), colors=np.vstack(self.vcol[uq_tri]))
-                pcd , _ = o3d.images_topcd(depth_im=depth_im , rgb_im=rgb_im ,intr=self.cam.intrinsic ,extr=self.cam.params.extrinsic)
+                pcd, _ = o3d.images_topcd(depth_im=depth_im, rgb_im=rgb_im, intr=self.cam.intrinsic,
+                                          extr=self.cam.params.extrinsic)
                 o3d.show(image=depth_im, waitkey=0, dest=False, windowname='imdepth')
                 o3d.show(image=rgb_im, waitkey=0, dest=False, windowname='rgb')
                 # o3d.show(image=ans['primitive_normals'].numpy(), dest=False, waitkey=0, windowname='normalsmap')
@@ -213,6 +215,6 @@ class UnProjector:
 if __name__ == '__main__':
     inputdir = os.getcwd() + f'{os.sep}data'
     outdir = os.getcwd() + f'{os.sep}data{os.sep}Arway'
-    App = UnProjector(inputdir, outdir, filename='OfficeArway.glb' , pose_format='raw')
+    App = UnProjector(inputdir, outdir, filename='OfficeArway.glb', pose_format='raw')
     # App.show()
     App.run(save=True, show=False)
