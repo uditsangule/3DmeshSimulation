@@ -139,7 +139,7 @@ class UnProjector:
         Visualizes the geometry with its boundingbox
         :return:
         """
-        o3d.NormalViz([self.mesh] + [self.bbox] + [o3d.axis_mesh(size=3, origin=[0, 0, 0])] + self.cam.show(ret_=True))
+        o3d.NormalViz([self.mesh] + [self.bbox] + [o3d.axis_mesh(size=3, origin=self.bbox.get_min_bound())] + self.cam.show(ret_=True))
         return
 
     def run(self, save=False, show=False, N=4, waitkey=1000):
@@ -160,9 +160,10 @@ class UnProjector:
             print(i)
             # tmat[:3,:3] = _RTS.get_rotmat(vec1=[0,0,1] , vec2= [0,0,i*5 if i < 3 else 2])
             tmat = np.eye(4)
-            tmat[0, :3] = [1, 0, 0]
+            tmat[0, :3] = [-1, 0, 0]
             tmat[1, :3] = [0, -1, 0]
-            tmat[:3, 3] = [1, 1, i]
+            tmat /= np.linalg.norm(tmat , axis=1)
+            tmat[:3, 3] = [0, 1, i]
 
             self.cam.update_locations(Tmat=tmat)
 
@@ -217,4 +218,4 @@ if __name__ == '__main__':
     outdir = os.getcwd() + f'{os.sep}data{os.sep}Arway'
     App = UnProjector(inputdir, outdir, filename='OfficeArway.glb', pose_format='raw')
     # App.show()
-    App.run(save=True, show=False)
+    App.run(save=True, show=True)
